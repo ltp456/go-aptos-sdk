@@ -191,7 +191,7 @@ func (ap *ApotsClient) AccountModules(address, version string) ([]types.AccountM
 	return result, nil
 }
 
-func (ap *ApotsClient) AccountModule(address, moduleName, version string) (*types.AccountModules, error) {
+func (ap *ApotsClient) AccountModuleByID(address, moduleName, version string) (*types.AccountModules, error) {
 	params := Params{}
 	params.SetValue("version", version)
 	result := &types.AccountModules{}
@@ -263,7 +263,7 @@ func (ap *ApotsClient) get(path string, params Params, value interface{}, option
 }
 
 func (ap *ApotsClient) newRequest(httpMethod, url string, reqData []byte) (*http.Request, error) {
-	req, err := http.NewRequest(httpMethod, fmt.Sprintf("%s%s", ap.endpoint, url), bytes.NewReader(reqData))
+	req, err := http.NewRequest(httpMethod, fmt.Sprintf("%s/%s", ap.endpoint, url), bytes.NewReader(reqData))
 	if err != nil {
 		return nil, err
 	}
