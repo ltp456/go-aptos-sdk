@@ -17,6 +17,8 @@ func init() {
 	}
 }
 
+// ----- general -----
+
 // ----account ------
 
 func TestApotsClient_GetAccount(t *testing.T) {
