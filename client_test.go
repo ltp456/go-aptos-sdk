@@ -18,6 +18,21 @@ func init() {
 	}
 }
 
+func TestApotsClient_NewAddress(t *testing.T) {
+
+	seed, err := client.NewRandSeed()
+	if err != nil {
+		panic(err)
+	}
+
+	keyPair, err := client.NewAccountFromSeed(seed)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(fmt.Printf("%x \n", keyPair.Private()))
+	fmt.Println(fmt.Printf("%x \n", keyPair.Public()))
+}
+
 // ----- general -----
 
 func TestApotsClient_LedgerInformation(t *testing.T) {
@@ -29,7 +44,7 @@ func TestApotsClient_LedgerInformation(t *testing.T) {
 }
 
 func TestApotsClient_ApiDocument(t *testing.T) {
-	apiDocument, err := client.ApiDocument()
+	apiDocument, err := client.apiDocument()
 	if err != nil {
 		panic(err)
 	}
@@ -37,7 +52,7 @@ func TestApotsClient_ApiDocument(t *testing.T) {
 }
 
 func TestApotsClient_OpenApiDocument(t *testing.T) {
-	openApiDocument, err := client.OpenApiDocument()
+	openApiDocument, err := client.openApiDocument()
 	if err != nil {
 		panic(err)
 	}

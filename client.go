@@ -37,7 +37,7 @@ func (ap *ApotsClient) LedgerInformation() (*types.LedgerInformation, error) {
 	return result, nil
 }
 
-func (ap *ApotsClient) ApiDocument() (interface{}, error) {
+func (ap *ApotsClient) apiDocument() (interface{}, error) {
 	var result interface{}
 	err := ap.get("spec.html", Params{}, &result)
 	if err != nil {
@@ -46,7 +46,7 @@ func (ap *ApotsClient) ApiDocument() (interface{}, error) {
 	return result, nil
 }
 
-func (ap *ApotsClient) OpenApiDocument() (interface{}, error) {
+func (ap *ApotsClient) openApiDocument() (interface{}, error) {
 	var result interface{}
 	err := ap.get("openapi.yaml", Params{}, &result)
 	if err != nil {
