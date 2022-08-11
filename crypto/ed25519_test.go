@@ -1,17 +1,15 @@
 package crypto
 
 import (
-	"encoding/hex"
 	"fmt"
 	"testing"
 )
 
 func TestNewKeyPairFromSeed(t *testing.T) {
-	//seed, err := NewRandSeed()
-	//if err != nil {
-	//	panic(err)
-	//}
-	seed, _ := hex.DecodeString("f164a8dc0eaf5b4293dbe62b703acdf7f7023400bbcc2751553a1127a52e4b3e")
+	seed, err := NewRandSeed()
+	if err != nil {
+		panic(err)
+	}
 	fmt.Printf("seed:%x\n", seed)
 	keyPair, err := NewKeyPairFromSeed(seed)
 	if err != nil {
