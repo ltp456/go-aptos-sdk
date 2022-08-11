@@ -2,7 +2,7 @@ package go_apots_sdk
 
 import (
 	"fmt"
-	"go-apots-sdk/form"
+	"github.com/ltp456/go-apots-sdk/form"
 	"testing"
 )
 
