@@ -1,23 +1,25 @@
 package crypto
 
 import (
-	"crypto/ed25519"
 	"crypto/rand"
 )
+
+// todo maybe more type
 
 type IKeypair interface {
 	Type() KeyType
 	Sign(msg []byte) ([]byte, error)
-	Public() PublicKey
-	Private() PrivateKey
+	Public() IPrivateKey
+	Private() IPublicKey
 	Address() []byte
+	Verify(message, signature []byte) (bool, error)
 }
 
-// todo
+type IPrivateKey interface {
+}
 
-type PrivateKey ed25519.PrivateKey
-type PublicKey ed25519.PublicKey
-type SecretKey []byte
+type IPublicKey interface {
+}
 
 func NewRandSeed() ([]byte, error) {
 	buf := make([]byte, SeedLength)

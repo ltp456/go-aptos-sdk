@@ -18,21 +18,6 @@ func init() {
 	}
 }
 
-func TestApotsClient_NewAddress(t *testing.T) {
-
-	seed, err := client.NewRandSeed()
-	if err != nil {
-		panic(err)
-	}
-
-	keyPair, err := client.NewAccountFromSeed(seed)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(fmt.Printf("%x \n", keyPair.Private()))
-	fmt.Println(fmt.Printf("%x \n", keyPair.Public()))
-}
-
 // ----- general -----
 
 func TestApotsClient_LedgerInformation(t *testing.T) {

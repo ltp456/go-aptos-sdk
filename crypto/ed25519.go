@@ -6,10 +6,13 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+type PrivateKey ed25519.PrivateKey
+
+type PublicKey ed25519.PublicKey
+
 type KeyPair struct {
 	private   *PrivateKey
 	publickey *PublicKey
-	signKey   []byte
 }
 
 func (kp *KeyPair) Type() KeyType {
@@ -33,7 +36,8 @@ func (kp *KeyPair) Address() []byte {
 }
 
 func (kp *KeyPair) Sign(msg []byte) ([]byte, error) {
-	return nil, nil
+	signature := ed25519.Sign(ed25519.PrivateKey(*kp.private), msg)
+	return signature, nil
 }
 
 func NewKeyPairFromPrivateKey(edPriv ed25519.PrivateKey) *KeyPair {
@@ -59,4 +63,21 @@ func NewKeyPairFromSeed(seed []byte) (*KeyPair, error) {
 		private:   &privateKey,
 	}
 	return keyPair, nil
+}
+
+func NewPrivateKey(in []byte) (*PrivateKey, error) {
+	if len(in) != PrivateKeyLength {
+		return nil, fmt.Errorf("cannot create private key: input is not 64 bytes")
+	}
+	priv := PrivateKey(in)
+	return &priv, nil
+}
+
+func (pub *PublicKey) Verify(msg, sig []byte) (bool, error) {
+
+	if len(sig) != SignatureLength {
+		return false, fmt.Errorf("invalid signature length")
+	}
+
+	return ed25519.Verify(ed25519.PublicKey(*pub), msg, sig), nil
 }
