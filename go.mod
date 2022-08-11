@@ -1,4 +1,4 @@
-module go-apots-sdk
+module github.com/ltp456/go-apots-sdk
 
 go 1.18
 
