@@ -2,20 +2,26 @@ package go_apots_sdk
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/ltp456/go-apots-sdk/crypto"
 	"github.com/ltp456/go-apots-sdk/form"
 	"github.com/ltp456/go-apots-sdk/types"
 	"io/ioutil"
 	"log"
+	"math/big"
 	"net/http"
 	"reflect"
+	"strings"
+	"time"
 )
 
 type ApotsClient struct {
-	imp      *http.Client
-	endpoint string
-	debug    bool
+	imp            *http.Client
+	endpoint       string
+	debug          bool
+	faucetEndpoint string
 }
 
 func NewApotsClient(endpoint string) (*ApotsClient, error) {
@@ -24,6 +30,24 @@ func NewApotsClient(endpoint string) (*ApotsClient, error) {
 		imp:      http.DefaultClient,
 	}
 	return fbClient, nil
+}
+
+// faucet
+
+func (ap *ApotsClient) SetFaucetEndpoint(url string) {
+	ap.faucetEndpoint = url
+}
+
+func (ap *ApotsClient) FaucetFundAccount(address string, amount uint64) (string, error) {
+	if ap.faucetEndpoint == "" {
+		return "", fmt.Errorf("please SetFaucetEndpoint")
+	}
+	data, err := ap.http(http.MethodPost, fmt.Sprintf("%s/mint?amount=%v&auth_key=%s", ap.faucetEndpoint, amount, address), nil)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+
 }
 
 // general
@@ -37,25 +61,71 @@ func (ap *ApotsClient) LedgerInformation() (*types.LedgerInformation, error) {
 	return result, nil
 }
 
-func (ap *ApotsClient) apiDocument() (interface{}, error) {
-	var result interface{}
-	err := ap.get("spec.html", Params{}, &result)
+func (ap *ApotsClient) apiDocument() (string, error) {
+
+	data, err := ap.http(http.MethodPost, fmt.Sprintf("%s/spec.html", ap.endpoint), nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return result, nil
+	return string(data), nil
+
 }
 
-func (ap *ApotsClient) openApiDocument() (interface{}, error) {
-	var result interface{}
-	err := ap.get("openapi.yaml", Params{}, &result)
+func (ap *ApotsClient) openApiDocument() (string, error) {
+
+	data, err := ap.http(http.MethodPost, fmt.Sprintf("%s/openapi.yaml", ap.endpoint), nil)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return result, nil
+	return string(data), nil
 }
 
 // transaction
+
+func (ap *ApotsClient) Transfer(seed []byte, sender, recipient, amount, maxGasAmount, gasUnitPrice string, options ...Value) (*types.SubmitTransactionResp, error) {
+
+	account, err := ap.GetAccount(sender)
+	if err != nil {
+		return nil, err
+	}
+	keyPair, err := crypto.NewKeyPairFromSeed(seed)
+	if err != nil {
+		return nil, err
+	}
+	payload := form.Payload{
+		Type:          string(ScriptFunctionPayload),
+		Function:      string(CoinTransfer),
+		TypeArguments: []string{string(ApotsCoin)},
+		Arguments:     []string{recipient, amount},
+	}
+
+	expirationTimestampSec := fmt.Sprintf("%v", time.Now().Unix()+600)
+
+	message, err := ap.CreateTxSignMessage(sender, account.SequenceNumber, maxGasAmount, gasUnitPrice, expirationTimestampSec, payload, options...)
+	if err != nil {
+		return nil, err
+	}
+	toSign, err := hex.DecodeString(strings.TrimPrefix(message.Message, "0x"))
+	if err != nil {
+		return nil, err
+	}
+	signature, err := keyPair.Sign(toSign)
+	if err != nil {
+		return nil, err
+	}
+	signatureInfo := form.Signature{
+		Type:      string(Ed25519Signature),
+		PublicKey: fmt.Sprintf("0x%x", keyPair.Public()),
+		Signature: fmt.Sprintf("0x%x", signature),
+	}
+	transaction, err := ap.SubmitTransaction(sender, account.SequenceNumber, maxGasAmount, gasUnitPrice, expirationTimestampSec,
+		payload, signatureInfo, options...)
+	if err != nil {
+		return nil, err
+	}
+	return transaction, nil
+
+}
 
 func (ap *ApotsClient) Transactions(start, limit int64) ([]types.Transaction, error) {
 	var result []types.Transaction
@@ -69,19 +139,18 @@ func (ap *ApotsClient) Transactions(start, limit int64) ([]types.Transaction, er
 	return result, nil
 }
 
-func (ap *ApotsClient) SubmitTransaction(sender, sequenceNumber, maxGasAmount, gasUnitPrice, gasCurrencyCode,
-	expirationTimestampSec string, payload form.Payload, signature form.Signature) (*types.SubmitTransactionResp, error) {
+func (ap *ApotsClient) SubmitTransaction(sender, sequenceNumber, maxGasAmount, gasUnitPrice,
+	expirationTimestampSec string, payload form.Payload, signature form.Signature, options ...Value) (*types.SubmitTransactionResp, error) {
 	params := Params{}
 	params.SetValue("sender", sender)
-	params.SetValue("sequenceNumber", sequenceNumber)
-	params.SetValue("maxGasAmount", maxGasAmount)
-	params.SetValue("gasUnitPrice", gasUnitPrice)
-	params.SetValue("gasCurrencyCode", gasCurrencyCode)
-	params.SetValue("expirationTimestampSec", expirationTimestampSec)
+	params.SetValue("sequence_number", sequenceNumber)
+	params.SetValue("max_gas_amount", maxGasAmount)
+	params.SetValue("gas_unit_price", gasUnitPrice)
+	params.SetValue("expiration_timestamp_secs", expirationTimestampSec)
 	params.SetValue("payload", payload)
 	params.SetValue("signature", signature)
 	result := &types.SubmitTransactionResp{}
-	err := ap.post("transactions", params, result)
+	err := ap.post("transactions", params, result, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -128,19 +197,17 @@ func (ap *ApotsClient) Transaction(txHash string) (*types.Transaction, error) {
 	return result, nil
 }
 
-func (ap *ApotsClient) CreateTxSignMessage(sender, sequenceNumber, maxGasAmount, gasUnitPrice, gasCurrencyCode,
-	expirationTimestampSec string, payload form.Payload, signature form.Signature) (*types.SignMessage, error) {
+func (ap *ApotsClient) CreateTxSignMessage(sender, sequenceNumber, maxGasAmount, gasUnitPrice,
+	expirationTimestampSec string, payload form.Payload, options ...Value) (*types.SignMessage, error) {
 	params := Params{}
 	params.SetValue("sender", sender)
-	params.SetValue("sequenceNumber", sequenceNumber)
-	params.SetValue("maxGasAmount", maxGasAmount)
-	params.SetValue("gasUnitPrice", gasUnitPrice)
-	params.SetValue("gasCurrencyCode", gasCurrencyCode)
-	params.SetValue("expirationTimestampSec", expirationTimestampSec)
+	params.SetValue("sequence_number", sequenceNumber)
+	params.SetValue("max_gas_amount", maxGasAmount)
+	params.SetValue("gas_unit_price", gasUnitPrice)
+	params.SetValue("expiration_timestamp_secs", expirationTimestampSec)
 	params.SetValue("payload", payload)
-	params.SetValue("signature", signature)
 	result := &types.SignMessage{}
-	err := ap.post("transactions/signing_message", params, result)
+	err := ap.post("transactions/signing_message", params, result, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -158,11 +225,27 @@ func (ap *ApotsClient) GetAccount(address string) (*types.Account, error) {
 	return result, nil
 }
 
-func (ap *ApotsClient) AccountResource(address, version string) ([]types.AccountResource, error) {
+func (ap *ApotsClient) ApotsBalance(address string) (*big.Int, error) {
+	accountResources, err := ap.AccountResource(address)
+	if err != nil {
+		return nil, err
+	}
+	for _, item := range accountResources {
+		if item.Type == string(ApotsCoinRes) {
+			balanceBig, ok := big.NewInt(0).SetString(item.Data.Coin.Value, 10)
+			if !ok {
+				return nil, fmt.Errorf("parse big error: %v", item.Data)
+			}
+			return balanceBig, nil
+		}
+	}
+	return big.NewInt(0), nil
+}
+
+func (ap *ApotsClient) AccountResource(address string, options ...Value) ([]types.AccountResource, error) {
 	params := Params{}
-	params.SetValue("version", version)
 	var result []types.AccountResource
-	err := ap.get(fmt.Sprintf("accounts/%s/resources", address), params, &result)
+	err := ap.get(fmt.Sprintf("accounts/%s/resources", address), params, &result, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -257,18 +340,45 @@ func (ap *ApotsClient) delete(method string, param Params, value interface{}, op
 }
 
 func (ap *ApotsClient) get(path string, params Params, value interface{}, options ...Value) error {
-
-	return ap.httpReq(http.MethodGet, fmt.Sprintf("%v?%v", path, params.Encode()), params, value, options...)
+	for _, opt := range options {
+		if params == nil {
+			break
+		}
+		params.SetValue(opt.Key, opt.Value)
+	}
+	return ap.httpReq(http.MethodGet, fmt.Sprintf("%v?%v", path, params.Encode()), nil, value, []Value{}...)
 
 }
 
 func (ap *ApotsClient) newRequest(httpMethod, url string, reqData []byte) (*http.Request, error) {
-	req, err := http.NewRequest(httpMethod, fmt.Sprintf("%s/%s", ap.endpoint, url), bytes.NewReader(reqData))
+	req, err := http.NewRequest(httpMethod, url, bytes.NewReader(reqData))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	return req, nil
+}
+
+func (ap *ApotsClient) http(httpMethod, url string, reqData []byte) ([]byte, error) {
+	request, err := ap.newRequest(httpMethod, url, reqData)
+	if err != nil {
+		return nil, err
+	}
+	response, err := ap.imp.Do(request)
+	if err != nil {
+		panic(err)
+	}
+	if response != nil && response.Body != nil {
+		defer response.Body.Close()
+	}
+	data, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	if response.StatusCode != 200 {
+		return nil, fmt.Errorf("%v %v %v", response.StatusCode, response.Status, string(data))
+	}
+	return data, nil
 }
 
 func (ap *ApotsClient) httpReq(httpMethod, path string, param Params, value interface{}, options ...Value) (err error) {
@@ -294,7 +404,7 @@ func (ap *ApotsClient) httpReq(httpMethod, path string, param Params, value inte
 	if Debug {
 		log.Printf("httpReq request: %v  %v \n", path, string(requestData))
 	}
-	req, err := ap.newRequest(httpMethod, path, requestData)
+	req, err := ap.newRequest(httpMethod, fmt.Sprintf("%s/%s", ap.endpoint, path), requestData)
 	if err != nil {
 		return err
 	}

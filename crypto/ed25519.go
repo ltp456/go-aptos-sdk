@@ -40,16 +40,6 @@ func (kp *KeyPair) Sign(msg []byte) ([]byte, error) {
 	return signature, nil
 }
 
-func NewKeyPairFromPrivateKey(edPriv ed25519.PrivateKey) *KeyPair {
-	publicKey := PublicKey(edPriv.Public().(ed25519.PublicKey))
-	privateKey := PrivateKey(edPriv)
-	keyPair := &KeyPair{
-		publickey: &publicKey,
-		private:   &privateKey,
-	}
-	return keyPair
-}
-
 func NewKeyPairFromSeed(seed []byte) (*KeyPair, error) {
 	if len(seed) != SeedLength {
 		return nil, fmt.Errorf("seed length must 32,  actually %v", len(seed))
@@ -63,14 +53,6 @@ func NewKeyPairFromSeed(seed []byte) (*KeyPair, error) {
 		private:   &privateKey,
 	}
 	return keyPair, nil
-}
-
-func NewPrivateKey(in []byte) (*PrivateKey, error) {
-	if len(in) != PrivateKeyLength {
-		return nil, fmt.Errorf("cannot create private key: input is not 64 bytes")
-	}
-	priv := PrivateKey(in)
-	return &priv, nil
 }
 
 func (pub *PublicKey) Verify(msg, sig []byte) (bool, error) {

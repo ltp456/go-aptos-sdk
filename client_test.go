@@ -1,6 +1,7 @@
 package go_apots_sdk
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/ltp456/go-apots-sdk/form"
 	"testing"
@@ -8,14 +9,27 @@ import (
 
 var client *ApotsClient
 var err error
+var endpoint = "https://fullnode.devnet.aptoslabs.com"
+
+var faucetEndpoint = "https://faucet.devnet.aptoslabs.com"
 
 func init() {
 	//endpoint := "http://aptos.dev/"
-	endpoint := "https://fullnode.devnet.aptoslabs.com"
 	client, err = NewApotsClient(endpoint)
 	if err != nil {
 		panic(err)
 	}
+}
+
+// faucet
+
+func TestApotsClient_FaucetFundAccount(t *testing.T) {
+	client.SetFaucetEndpoint(faucetEndpoint)
+	resp, err := client.FaucetFundAccount("0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9", 50000)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(resp)
 }
 
 // ----- general -----
@@ -46,6 +60,23 @@ func TestApotsClient_OpenApiDocument(t *testing.T) {
 
 // ------- transaction -------
 
+func TestApotsClient_Transfer(t *testing.T) {
+	seedStr := "76bcf7c263ab58224fc3f57d701de3836581df7d62b270a86344c5214812e0b9"
+	seed, err := hex.DecodeString(seedStr)
+	if err != nil {
+		panic(err)
+	}
+	sender := "0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9"
+	recipient := "0x6ac297031be21d7d3b83e53f76aa803016c389cd4bcdd4d0928b7aaa80c6ff83"
+
+	submitTransactionResp, err := client.Transfer(seed, sender, recipient, "1000", "1000", "1")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(submitTransactionResp.Hash)
+
+}
+
 func TestApotsClient_Transactions(t *testing.T) {
 	transactions, err := client.Transactions(0, 100)
 	if err != nil {
@@ -58,7 +89,7 @@ func TestApotsClient_Transactions(t *testing.T) {
 }
 
 func TestApotsClient_Transaction(t *testing.T) {
-	transaction, err := client.Transaction("0x3044cfa1e88323298d8791e2539d192562e68f8640f9870149449becaf50e371")
+	transaction, err := client.Transaction("0xe53332192af7675144a3ca0a21e5ca106929b411eee242b3149a2c83e0b60fe3")
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +98,6 @@ func TestApotsClient_Transaction(t *testing.T) {
 
 func TestApotsClient_SubmitTransaction(t *testing.T) {
 	transaction, err := client.SubmitTransaction(
-		"",
 		"",
 		"",
 		"",
@@ -118,9 +148,7 @@ func TestApotsClient_CreateTxSignMessage(t *testing.T) {
 		"",
 		"",
 		"",
-		"",
 		form.Payload{},
-		form.Signature{},
 	)
 	if err != nil {
 		panic(err)
@@ -131,19 +159,30 @@ func TestApotsClient_CreateTxSignMessage(t *testing.T) {
 // ----account ------
 
 func TestApotsClient_GetAccount(t *testing.T) {
-	account, err := client.GetAccount("")
+	account, err := client.GetAccount("0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9")
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println(account)
 }
 
-func TestApotsClient_AccountResource(t *testing.T) {
-	accountResources, err := client.AccountResource("", "")
+func TestApotsClient_ApotsBalance(t *testing.T) {
+
+	balance, err := client.ApotsBalance("0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(accountResources)
+	fmt.Println(balance.String())
+}
+
+func TestApotsClient_AccountResource(t *testing.T) {
+	accountResources, err := client.AccountResource("0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9")
+	if err != nil {
+		panic(err)
+	}
+	for _, item := range accountResources {
+		fmt.Println(item.Type, item.Data)
+	}
 }
 
 func TestApotsClient_AccountResourceByResType(t *testing.T) {
