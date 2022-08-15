@@ -1,5 +1,5 @@
 # go-apots-sdk
-apots rest api implementation of the go language version
+apots rest api implementation of the go language version, generate address, sign transaction and others
 
 [Apots Node Api Doc](https://aptos.dev/api/latest-api.html#/)
 
@@ -49,7 +49,7 @@ use example
             panic(err)
         }
         fmt.Printf("verify: %v\n", verify)
-    
+        
 
         // client
         endpoint := "https://fullnode.devnet.aptoslabs.com"
@@ -57,6 +57,16 @@ use example
         if err != nil {
             panic(err)
         }
+
+
+        //faucet
+        faucetEndpoint := "https://faucet.devnet.aptoslabs.com"
+        client.SetFaucetEndpoint(faucetEndpoint)
+        resp, err := apotsClient.FaucetFundAccount("0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9", 50000)
+        if err != nil {
+            panic(err)
+        }
+        fmt.Println(resp)
 
 
         // transfer 
@@ -68,7 +78,7 @@ use example
         sender := "0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9"
         recipient := "0x6ac297031be21d7d3b83e53f76aa803016c389cd4bcdd4d0928b7aaa80c6ff83"
     
-        submitTransactionResp, err := client.Transfer(seed, sender, recipient, "1000", "1000", "1")
+        submitTransactionResp, err := apotsClient.Transfer(seed, sender, recipient, "1000", "1000", "1")
         if err != nil {
             panic(err)
         }

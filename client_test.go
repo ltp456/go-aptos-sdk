@@ -69,7 +69,7 @@ func TestApotsClient_Transfer(t *testing.T) {
 	sender := "0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9"
 	recipient := "0x6ac297031be21d7d3b83e53f76aa803016c389cd4bcdd4d0928b7aaa80c6ff83"
 
-	submitTransactionResp, err := client.Transfer(seed, sender, recipient, "1000", "1000", "1")
+	submitTransactionResp, err := client.Transfer(seed, sender, recipient, "100", "1000", "1")
 	if err != nil {
 		panic(err)
 	}
@@ -83,7 +83,7 @@ func TestApotsClient_Transactions(t *testing.T) {
 		panic(err)
 	}
 	for _, tx := range transactions {
-		fmt.Println(tx)
+		fmt.Println(tx.Version)
 	}
 
 }
@@ -114,20 +114,19 @@ func TestApotsClient_SubmitTransaction(t *testing.T) {
 }
 
 func TestApotsClient_SimulateTransaction(t *testing.T) {
-	transaction, err := client.SimulateTransaction(
-		"",
-		"",
-		"",
-		"",
-		"",
-		"",
-		form.Payload{},
-		form.Signature{},
-	)
+	seedStr := "76bcf7c263ab58224fc3f57d701de3836581df7d62b270a86344c5214812e0b9"
+	seed, err := hex.DecodeString(seedStr)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(transaction)
+	sender := "0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9"
+	recipient := "0x6ac297031be21d7d3b83e53f76aa803016c389cd4bcdd4d0928b7aaa80c6ff83"
+
+	transaction, err := client.SimulateTransaction(seed, sender, recipient, "10", "1000", "1", Value{"gas_currency_code", "XUS"})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(transaction.Hash)
 }
 
 func TestApotsClient_AccountTransactions(t *testing.T) {

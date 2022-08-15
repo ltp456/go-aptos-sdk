@@ -63,7 +63,7 @@ func (ap *ApotsClient) LedgerInformation() (*types.LedgerInformation, error) {
 
 func (ap *ApotsClient) apiDocument() (string, error) {
 
-	data, err := ap.http(http.MethodPost, fmt.Sprintf("%s/spec.html", ap.endpoint), nil)
+	data, err := ap.http(http.MethodGet, fmt.Sprintf("%s/spec.html", ap.endpoint), nil)
 	if err != nil {
 		return "", err
 	}
@@ -73,7 +73,7 @@ func (ap *ApotsClient) apiDocument() (string, error) {
 
 func (ap *ApotsClient) openApiDocument() (string, error) {
 
-	data, err := ap.http(http.MethodPost, fmt.Sprintf("%s/openapi.yaml", ap.endpoint), nil)
+	data, err := ap.http(http.MethodGet, fmt.Sprintf("%s/openapi.yaml", ap.endpoint), nil)
 	if err != nil {
 		return "", err
 	}
@@ -127,6 +127,50 @@ func (ap *ApotsClient) Transfer(seed []byte, sender, recipient, amount, maxGasAm
 
 }
 
+func (ap *ApotsClient) SimulateTransaction(seed []byte, sender, recipient, amount, maxGasAmount, gasUnitPrice string, options ...Value) (*types.Transaction, error) {
+	account, err := ap.GetAccount(sender)
+	if err != nil {
+		return nil, err
+	}
+	keyPair, err := crypto.NewKeyPairFromSeed(seed)
+	if err != nil {
+		return nil, err
+	}
+	payload := form.Payload{
+		Type:          string(ScriptFunctionPayload),
+		Function:      string(CoinTransfer),
+		TypeArguments: []string{string(ApotsCoin)},
+		Arguments:     []string{recipient, amount},
+	}
+
+	expirationTimestampSec := fmt.Sprintf("%v", time.Now().Unix()+600)
+
+	message, err := ap.CreateTxSignMessage(sender, account.SequenceNumber, maxGasAmount, gasUnitPrice, expirationTimestampSec, payload, options...)
+	if err != nil {
+		return nil, err
+	}
+	toSign, err := hex.DecodeString(strings.TrimPrefix(message.Message, "0x"))
+	if err != nil {
+		return nil, err
+	}
+	signature, err := keyPair.Sign(toSign)
+	if err != nil {
+		return nil, err
+	}
+	signatureInfo := form.Signature{
+		Type:      string(Ed25519Signature),
+		PublicKey: fmt.Sprintf("0x%x", keyPair.Public()),
+		Signature: fmt.Sprintf("0x%x", signature),
+	}
+	transaction, err := ap.simulateTransaction(sender, account.SequenceNumber, maxGasAmount, gasUnitPrice, expirationTimestampSec,
+		payload, signatureInfo, options...)
+	if err != nil {
+		return nil, err
+	}
+	return transaction, nil
+
+}
+
 func (ap *ApotsClient) Transactions(start, limit int64) ([]types.Transaction, error) {
 	var result []types.Transaction
 	params := Params{}
@@ -157,19 +201,18 @@ func (ap *ApotsClient) SubmitTransaction(sender, sequenceNumber, maxGasAmount, g
 	return result, nil
 }
 
-func (ap *ApotsClient) SimulateTransaction(sender, sequenceNumber, maxGasAmount, gasUnitPrice, gasCurrencyCode,
-	expirationTimestampSec string, payload form.Payload, signature form.Signature) (*types.Transaction, error) {
+func (ap *ApotsClient) simulateTransaction(sender, sequenceNumber, maxGasAmount, gasUnitPrice,
+	expirationTimestampSec string, payload form.Payload, signature form.Signature, options ...Value) (*types.Transaction, error) {
 	params := Params{}
 	params.SetValue("sender", sender)
-	params.SetValue("sequenceNumber", sequenceNumber)
-	params.SetValue("maxGasAmount", maxGasAmount)
-	params.SetValue("gasUnitPrice", gasUnitPrice)
-	params.SetValue("gasCurrencyCode", gasCurrencyCode)
-	params.SetValue("expirationTimestampSec", expirationTimestampSec)
+	params.SetValue("sequence_number", sequenceNumber)
+	params.SetValue("max_gas_amount", maxGasAmount)
+	params.SetValue("gas_unit_price", gasUnitPrice)
+	params.SetValue("expiration_timestamp_secs", expirationTimestampSec)
 	params.SetValue("payload", payload)
 	params.SetValue("signature", signature)
 	result := &types.Transaction{}
-	err := ap.post("transactions/simulate", params, result)
+	err := ap.post("transactions/simulate", params, result, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +444,7 @@ func (ap *ApotsClient) httpReq(httpMethod, path string, param Params, value inte
 		}
 	}
 
-	if Debug {
+	if ap.debug {
 		log.Printf("httpReq request: %v  %v \n", path, string(requestData))
 	}
 	req, err := ap.newRequest(httpMethod, fmt.Sprintf("%s/%s", ap.endpoint, path), requestData)
@@ -428,7 +471,7 @@ func (ap *ApotsClient) httpReq(httpMethod, path string, param Params, value inte
 	if err != nil {
 		return err
 	}
-	if Debug {
+	if ap.debug {
 		log.Printf("httpReq response: %v %v \n", path, string(data))
 	}
 	if len(data) != 0 {
