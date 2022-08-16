@@ -78,12 +78,14 @@ func TestApotsClient_Transfer(t *testing.T) {
 }
 
 func TestApotsClient_Transactions(t *testing.T) {
-	transactions, err := client.Transactions(0, 100)
+
+	//transactions, err := client.Transactions(9371617, 100)
+	transactions, err := client.Transactions(9371617, 1)
 	if err != nil {
 		panic(err)
 	}
 	for _, tx := range transactions {
-		fmt.Println(tx.Version)
+		fmt.Println(tx)
 	}
 
 }

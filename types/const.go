@@ -1,6 +1,17 @@
-package go_apots_sdk
+package types
 
-const SeedLength = 32
+type VMStatus string
+
+const (
+	ExecutedSuccessfully VMStatus = "Executed successfully"
+)
+
+type EventType string
+
+const (
+	WithdrawEvent EventType = "0x1::coin::WithdrawEvent"
+	DepositEvent  EventType = "0x1::coin::DepositEvent"
+)
 
 type ResType string
 

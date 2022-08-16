@@ -28,6 +28,7 @@ func NewApotsClient(endpoint string) (*ApotsClient, error) {
 	fbClient := &ApotsClient{
 		endpoint: endpoint,
 		imp:      http.DefaultClient,
+		debug:    false,
 	}
 	return fbClient, nil
 }
@@ -93,9 +94,9 @@ func (ap *ApotsClient) Transfer(seed []byte, sender, recipient, amount, maxGasAm
 		return nil, err
 	}
 	payload := form.Payload{
-		Type:          string(ScriptFunctionPayload),
-		Function:      string(CoinTransfer),
-		TypeArguments: []string{string(ApotsCoin)},
+		Type:          string(types.ScriptFunctionPayload),
+		Function:      string(types.CoinTransfer),
+		TypeArguments: []string{string(types.ApotsCoin)},
 		Arguments:     []string{recipient, amount},
 	}
 
@@ -114,7 +115,7 @@ func (ap *ApotsClient) Transfer(seed []byte, sender, recipient, amount, maxGasAm
 		return nil, err
 	}
 	signatureInfo := form.Signature{
-		Type:      string(Ed25519Signature),
+		Type:      string(types.Ed25519Signature),
 		PublicKey: fmt.Sprintf("0x%x", keyPair.Public()),
 		Signature: fmt.Sprintf("0x%x", signature),
 	}
@@ -137,9 +138,9 @@ func (ap *ApotsClient) SimulateTransaction(seed []byte, sender, recipient, amoun
 		return nil, err
 	}
 	payload := form.Payload{
-		Type:          string(ScriptFunctionPayload),
-		Function:      string(CoinTransfer),
-		TypeArguments: []string{string(ApotsCoin)},
+		Type:          string(types.ScriptFunctionPayload),
+		Function:      string(types.CoinTransfer),
+		TypeArguments: []string{string(types.ApotsCoin)},
 		Arguments:     []string{recipient, amount},
 	}
 
@@ -158,7 +159,7 @@ func (ap *ApotsClient) SimulateTransaction(seed []byte, sender, recipient, amoun
 		return nil, err
 	}
 	signatureInfo := form.Signature{
-		Type:      string(Ed25519Signature),
+		Type:      string(types.Ed25519Signature),
 		PublicKey: fmt.Sprintf("0x%x", keyPair.Public()),
 		Signature: fmt.Sprintf("0x%x", signature),
 	}
@@ -274,7 +275,7 @@ func (ap *ApotsClient) ApotsBalance(address string) (*big.Int, error) {
 		return nil, err
 	}
 	for _, item := range accountResources {
-		if item.Type == string(ApotsCoinRes) {
+		if item.Type == string(types.ApotsCoinRes) {
 			balanceBig, ok := big.NewInt(0).SetString(item.Data.Coin.Value, 10)
 			if !ok {
 				return nil, fmt.Errorf("parse big error: %v", item.Data)

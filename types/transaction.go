@@ -36,25 +36,29 @@ type Transaction struct {
 	Payload             Payload   `json:"payload"`
 	Version             string    `json:"version"`
 	Hash                string    `json:"hash"`
+	Sender              string    `json:"sender"`
 	StateRootHash       string    `json:"state_root_hash"`
 	EventRootHash       string    `json:"event_root_hash"`
 	GasUsed             string    `json:"gas_used"`
 	Success             bool      `json:"success"`
-	VMStatus            string    `json:"vm_status"`
+	VMStatus            VMStatus  `json:"vm_status"`
 	AccumulatorRootHash string    `json:"accumulator_root_hash"`
 	Changes             []Changes `json:"changes"`
+	Signature           Signature `json:"signature"`
+	SequenceNumber      string    `json:"sequence_number"`
 }
 
 type Data struct {
 	Created string `json:"created"`
 	RoleID  string `json:"role_id"`
+	Amount  string `json:"amount"`
 }
 
 type Events struct {
-	Key            string `json:"key"`
-	SequenceNumber string `json:"sequence_number"`
-	Type           string `json:"type"`
-	Data           Data   `json:"data"`
+	Key            string    `json:"key"`
+	SequenceNumber string    `json:"sequence_number"`
+	Type           EventType `json:"type"`
+	Data           Data      `json:"data"`
 }
 
 type Abi struct {
@@ -83,8 +87,11 @@ type WriteSet struct {
 }
 
 type Payload struct {
-	Type     string   `json:"type"`
-	WriteSet WriteSet `json:"write_set"`
+	Type          FunctionType  `json:"type"`
+	Function      Function      `json:"function"`
+	TypeArguments []string      `json:"type_arguments"`
+	Arguments     []interface{} `json:"arguments"`
+	WriteSet      WriteSet      `json:"write_set"`
 }
 
 type Changes struct {
