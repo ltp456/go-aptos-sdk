@@ -9,12 +9,11 @@ import (
 
 var client *ApotsClient
 var err error
-var endpoint = "https://fullnode.devnet.aptoslabs.com"
-
-var faucetEndpoint = "https://faucet.devnet.aptoslabs.com"
 
 func init() {
 	//endpoint := "http://aptos.dev/"
+	//endpoint := "https://fullnode.devnet.aptoslabs.com"
+	endpoint := "http://127.0.0.1:8080"
 	client, err = NewApotsClient(endpoint)
 	if err != nil {
 		panic(err)
@@ -24,8 +23,10 @@ func init() {
 // faucet
 
 func TestApotsClient_FaucetFundAccount(t *testing.T) {
+	//var faucetEndpoint = "https://faucet.devnet.aptoslabs.com"
+	faucetEndpoint := "http://127.0.0.1:8081"
 	client.SetFaucetEndpoint(faucetEndpoint)
-	resp, err := client.FaucetFundAccount("0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9", 50000)
+	resp, err := client.FaucetFundAccount("0x0a01c2f21269ac1795fcb0fc50d6982a1ac1e198c5f5617f828bc9df4644db9c", 50000)
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +68,7 @@ func TestApotsClient_Transfer(t *testing.T) {
 		panic(err)
 	}
 	sender := "0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9"
-	recipient := "0x6ac297031be21d7d3b83e53f76aa803016c389cd4bcdd4d0928b7aaa80c6ff83"
+	recipient := "0x0a01c2f21269ac1795fcb0fc50d6982a1ac1e198c5f5617f828bc9df4644db9c"
 
 	submitTransactionResp, err := client.Transfer(seed, sender, recipient, "100", "1000", "1")
 	if err != nil {
@@ -169,7 +170,7 @@ func TestApotsClient_GetAccount(t *testing.T) {
 
 func TestApotsClient_ApotsBalance(t *testing.T) {
 
-	balance, err := client.ApotsBalance("0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9")
+	balance, err := client.ApotsBalance("0x0a01c2f21269ac1795fcb0fc50d6982a1ac1e198c5f5617f828bc9df4644db9c")
 	if err != nil {
 		panic(err)
 	}
