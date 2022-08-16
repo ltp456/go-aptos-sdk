@@ -1,5 +1,5 @@
-# go-apots-sdk
-apots rest api implementation of the go language version, generate address, sign transaction and others
+# go-aptos-sdk
+aptos rest api implementation of the go language version, generate address, sign transaction and others
 
 [Apots Node Api Doc](https://aptos.dev/api/latest-api.html#/)
 
@@ -7,7 +7,7 @@ apots rest api implementation of the go language version, generate address, sign
 
 install
 
-    go get github.com/ltp456/go-apots-sdk
+    go get github.com/ltp456/go-aptos-sdk
 
 
 use example
@@ -16,7 +16,7 @@ use example
 
     import (
         "fmt"
-        goapotssdk "github.com/ltp456/go-apots-sdk"
+        goapotssdk "github.com/ltp456/go-aptos-sdk"
         "github.com/ltp456/go-apots-sdk/crypto"
     )
     
