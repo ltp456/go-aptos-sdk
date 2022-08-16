@@ -1,4 +1,4 @@
-module github.com/ltp456/go-apots-sdk
+module github.com/ltp456/go-aptos-sdk
 
 go 1.18
 

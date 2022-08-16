@@ -1,4 +1,4 @@
-package go_apots_sdk
+package go_aptos_sdk
 
 import (
 	"fmt"

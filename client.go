@@ -1,13 +1,13 @@
-package go_apots_sdk
+package go_aptos_sdk
 
 import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/ltp456/go-apots-sdk/crypto"
-	"github.com/ltp456/go-apots-sdk/form"
-	"github.com/ltp456/go-apots-sdk/types"
+	"github.com/ltp456/go-aptos-sdk/crypto"
+	"github.com/ltp456/go-aptos-sdk/form"
+	"github.com/ltp456/go-aptos-sdk/types"
 	"io/ioutil"
 	"log"
 	"math/big"

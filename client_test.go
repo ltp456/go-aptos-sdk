@@ -1,9 +1,9 @@
-package go_apots_sdk
+package go_aptos_sdk
 
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/ltp456/go-apots-sdk/form"
+	"github.com/ltp456/go-aptos-sdk/form"
 	"testing"
 )
 
