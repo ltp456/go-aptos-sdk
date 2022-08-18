@@ -15,9 +15,10 @@ use example
     package main
 
     import (
+        "encoding/hex"
         "fmt"
-        goapotssdk "github.com/ltp456/go-aptos-sdk"
-        "github.com/ltp456/go-apots-sdk/crypto"
+        goaptossdk "github.com/ltp456/go-aptos-sdk"
+        "github.com/ltp456/go-aptos-sdk/crypto"
     )
     
     func main() {
@@ -49,29 +50,26 @@ use example
             panic(err)
         }
         fmt.Printf("verify: %v\n", verify)
-        
-
+    
         // client
         endpoint := "https://fullnode.devnet.aptoslabs.com"
-        apotsClient, err := goapotssdk.NewApotsClient(endpoint)
+        apotsClient, err := goaptossdk.NewApotsClient(endpoint)
         if err != nil {
             panic(err)
         }
-
-
+    
         //faucet
         faucetEndpoint := "https://faucet.devnet.aptoslabs.com"
-        client.SetFaucetEndpoint(faucetEndpoint)
+        apotsClient.SetFaucetEndpoint(faucetEndpoint)
         resp, err := apotsClient.FaucetFundAccount("0x468f5ade8a4cb5e426bad07ad8d808fb067160bc506eab8620520f8a5a4a08c9", 50000)
         if err != nil {
             panic(err)
         }
         fmt.Println(resp)
-
-
-        // transfer 
-        seedStr := ""
-        seed, err := hex.DecodeString(seedStr)
+    
+        // transfer
+        seedStr := "d6140d0340dbf501388905c0fbd1457315631fbadb7e1625259f4b0107ffedde"
+        seed, err = hex.DecodeString(seedStr)
         if err != nil {
             panic(err)
         }
@@ -83,12 +81,12 @@ use example
             panic(err)
         }
         fmt.Println(submitTransactionResp.Hash)
-
+    
         // Ledger
         information, err := apotsClient.LedgerInformation()
         if err != nil {
             panic(err)
         }
         fmt.Println(information)
-
+    
     }
